@@ -14,9 +14,11 @@
     "express": "~4.14.0",
     "jsonwebtoken": "^7.3.0",
     "mongoose": "~4.7.2",
-    "mongoose-auto-increment": "~5.0.1",
     "nconf": "~0.8.4",
     "nodemon": "~1.11.0",
     "winston": "~2.3.0"
+  },
+  "devDependencies": {
+    "node-mongoose-fixtures": "^0.2.4"
   }
 }

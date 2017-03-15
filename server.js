@@ -3,12 +3,14 @@ var express = require('express'),
   log = require('./libs/log')(module),
   path = require('path'), // модуль для парсинга пути
   app = express(),
-  config = require('./libs/config');
+  config = require('./libs/config'),
+  jwt = require('jsonwebtoken'),
+  UserModel = require('./libs/mongoose').UserModel;
 
 app.use(function (req, res, next) {
   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, authorization');
   if (req.method === 'OPTIONS') {
     res.end();
   }
@@ -18,6 +20,25 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
+
+app.use(function(req, res, next) {
+  var token = req.headers['authorization'];
+  if (!token) return next(); //if no token, continue
+
+  token = token.replace('Bearer ', '');
+
+  jwt.verify(token, 'secret', function(err, user) {
+    if (err) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please register Log in using a valid email to submit posts'
+      });
+    } else {
+      req.user = user; //set the user to req so other routes can use it
+      next();
+    }
+  });
+});
 
 require('./routes')(app);
 
