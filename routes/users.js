@@ -7,38 +7,39 @@ module.exports = function (app) {
 
   function generateToken(user) {
     var u = {
-     name: user.name,
-     username: user.username,
-     admin: user.admin,
      _id: user._id.toString(),
-     image: user.image
+     username: user.username,
+     groups: user.groups
     };
     return token = jwt.sign(u, 'secret', {
        expiresIn: 60 * 60 * 24 // expires in 24 hours
     });
   }
 
-  app.get('/api/user', function (req, res) {
-    User.findById(req.user._id, function (arr, user) {
-      return res.send({
-        status: 'OK',
-        user: user
-      });
-    });
-  });
-
   app.get('/api/users', function (req, res) {
-    return User.find(function (err, users) {
-      if (!err) {
-        return res.send(users);
-      } else {
-        res.statusCode = 500;
-        log.error('Internal error(%d): %s', res.statusCode, err.message);
-        return res.send({
-          error: 'Server error'
-        });
-      }
-    });
+    if (!req.headers.authorization) {
+      res.statusCode = 403;
+        res.send({
+        error: 'Authorization error'
+      });
+    } else if (req.user.groups.indexOf('ADMIN') === -1) {
+      res.statusCode = 401;
+        res.send({
+        error: 'Access denied'
+      });
+    } else {
+      return User.find(function (err, users) {
+        if (!err) {
+          return res.send(users);
+        } else {
+          res.statusCode = 500;
+          log.error('Internal error(%d): %s', res.statusCode, err.message);
+          return res.send({
+            error: 'Server error'
+          });
+        }
+      });
+    }
   });
 
   app.post('/api/users/signup', function(req, res) {
@@ -54,10 +55,8 @@ module.exports = function (app) {
     function saveUser(user) {
       user.save(function(err, user) {
         if (err) { return res.send({ error: err.errmsg }); }
-        var token = generateToken(user);
         res.json({
-          user: user,
-          token: token
+          user: user
         });
       });
     }
@@ -84,7 +83,6 @@ module.exports = function (app) {
   });
 
   app.post('/api/users/signin', function(req, res) {
-    console.log('fasdfasdf');
     User
     .findOne({email: req.body.email})
     .exec(function(err, user) {
@@ -110,5 +108,43 @@ module.exports = function (app) {
           });
         });
      });
+  });
+
+
+  app.delete('/api/users/:id', function (req, res) {
+    if (!req.headers.authorization) {
+      res.statusCode = 403;
+        res.send({
+        error: 'Authorization error'
+      });
+    } else if (req.user.groups.indexOf('ADMIN') === -1) {
+      res.statusCode = 401;
+        res.send({
+        error: 'Access denied'
+      });
+    } else {
+      return UserModel.findById(req.params.id, function (err, movie) {
+        if (!movie) {
+          res.statusCode = 404;
+          return res.send({
+            error: 'Not found'
+          });
+        }
+        return movie.remove(function (err) {
+          if (!err) {
+            log.info("movie removed");
+            return res.send({
+              status: 'OK'
+            });
+          } else {
+            res.statusCode = 500;
+            log.error('Internal error(%d): %s', res.statusCode, err.message);
+            return res.send({
+              error: 'Server error'
+            });
+          }
+        });
+      });
+    }
   });
 };
