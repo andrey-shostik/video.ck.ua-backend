@@ -123,16 +123,16 @@ module.exports = function (app) {
         error: 'Access denied'
       });
     } else {
-      return UserModel.findById(req.params.id, function (err, movie) {
-        if (!movie) {
+      return UserModel.findById(req.params.id, function (err, user) {
+        if (!user) {
           res.statusCode = 404;
           return res.send({
             error: 'Not found'
           });
         }
-        return movie.remove(function (err) {
+        return user.remove(function (err) {
           if (!err) {
-            log.info("movie removed");
+            log.info("user removed");
             return res.send({
               status: 'OK'
             });
