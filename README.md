@@ -1,1 +1,2 @@
-sample test app
+npm install
+nodemon server.js
